@@ -5,6 +5,7 @@ import '../../../auth/providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/dashboard_section.dart';
+import '../../../reports/presentation/screens/reports_screen.dart';
 
 class PriestDashboardScreen extends ConsumerWidget {
   const PriestDashboardScreen({super.key});
@@ -12,6 +13,7 @@ class PriestDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
+    final statsAsync = ref.watch(dashboardStatsProvider);
 
     return Scaffold(
       body: CustomScrollView(
@@ -74,37 +76,58 @@ class PriestDashboardScreen extends ConsumerWidget {
           // Stats Grid
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-            sliver: SliverGrid.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.6,
-              children: const [
-                StatCard(
-                  title: 'إجمالي المخدومين',
-                  value: '—',
-                  icon: Icons.people_rounded,
-                  color: AppColors.primary,
+            sliver: statsAsync.when(
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                StatCard(
-                  title: 'حضور الجمعة',
-                  value: '—',
-                  icon: Icons.event_available_rounded,
-                  color: AppColors.present,
-                ),
-                StatCard(
-                  title: 'الصلوات اليوم',
-                  value: '—',
-                  icon: Icons.mosque_rounded,
-                  color: AppColors.accent,
-                ),
-                StatCard(
-                  title: 'متابعات معلقة',
-                  value: '—',
-                  icon: Icons.follow_the_signs_rounded,
-                  color: AppColors.warning,
-                ),
-              ],
+              ),
+              error: (e, _) => const SliverToBoxAdapter(
+                child: Center(child: Text('خطأ في تحميل البيانات')),
+              ),
+              data: (data) {
+                final friday = data['latest_friday'] as Map<String, dynamic>?;
+                final prayer = data['prayer_completion_today'] as Map<String, dynamic>? ?? {};
+                
+                final totalMembers = data['total_members'] ?? 0;
+                final fridayPresent = friday?['present'] ?? 0;
+                final prayersCompleted = prayer['completed'] ?? 0;
+                final pendingFollowups = data['pending_followups'] ?? 0;
+
+                return SliverGrid.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.6,
+                  children: [
+                    StatCard(
+                      title: 'إجمالي المخدومين',
+                      value: '$totalMembers',
+                      icon: Icons.people_rounded,
+                      color: AppColors.primary,
+                    ),
+                    StatCard(
+                      title: 'حضور الجمعة',
+                      value: '$fridayPresent',
+                      icon: Icons.event_available_rounded,
+                      color: AppColors.present,
+                    ),
+                    StatCard(
+                      title: 'الصلوات اليوم',
+                      value: '$prayersCompleted',
+                      icon: Icons.mosque_rounded,
+                      color: AppColors.accent,
+                    ),
+                    StatCard(
+                      title: 'متابعات معلقة',
+                      value: '$pendingFollowups',
+                      icon: Icons.follow_the_signs_rounded,
+                      color: AppColors.warning,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
 

@@ -19,6 +19,7 @@ import '../../features/mass_attendance/presentation/screens/mass_attendance_scre
 import '../../features/reports/presentation/screens/reports_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/messaging/presentation/screens/chat_screen.dart';
+import '../../features/messaging/presentation/screens/create_group_chat_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -59,6 +60,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             otherName: extra?['name'] ?? 'محادثة',
           );
         },
+      ),
+
+      GoRoute(
+        path: '/create_group',
+        builder: (context, state) => const CreateGroupChatScreen(),
       ),
 
       // ═══════════════════════════════════════

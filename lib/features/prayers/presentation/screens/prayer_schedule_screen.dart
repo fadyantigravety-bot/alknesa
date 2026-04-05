@@ -96,13 +96,19 @@ class PrayerScheduleScreen extends ConsumerWidget {
                           _ActionButton(
                             label: 'صليت',
                             color: AppColors.completed,
-                            onTap: () => ref.read(prayerRepositoryProvider).updateStatus(prayer.id, 'completed'),
+                            onTap: () async {
+                              await ref.read(prayerRepositoryProvider).updateStatus(prayer.id, 'completed');
+                              ref.invalidate(todayPrayersProvider);
+                            },
                           ),
                           const SizedBox(width: 6),
                           _ActionButton(
                             label: 'لاحقاً',
                             color: AppColors.snoozed,
-                            onTap: () => ref.read(prayerRepositoryProvider).updateStatus(prayer.id, 'snoozed'),
+                            onTap: () async {
+                              await ref.read(prayerRepositoryProvider).updateStatus(prayer.id, 'snoozed');
+                              ref.invalidate(todayPrayersProvider);
+                            },
                           ),
                         ],
                       ),

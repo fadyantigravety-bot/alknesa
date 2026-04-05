@@ -3,8 +3,8 @@ class ApiConstants {
 
   // Change this to your VPS IP/domain in production
   // Use 10.0.2.2 for Android emulator, localhost for web
-  static const String baseUrl = 'http://localhost:8000/api';
-  static const String wsUrl = 'ws://localhost:8000/ws';
+  static const String baseUrl = 'https://alknesa-production.up.railway.app/api';
+  static const String wsUrl = 'wss://alknesa-production.up.railway.app/ws';
 
   // Auth
   static const String login = '/auth/login/';

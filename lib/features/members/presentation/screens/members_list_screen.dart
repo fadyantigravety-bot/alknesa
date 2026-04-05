@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../messaging/data/repositories/messaging_repository.dart';
+import 'member_details_screen.dart';
 
 final membersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final dio = ref.watch(dioProvider);
@@ -79,7 +83,7 @@ class _MembersListScreenState extends ConsumerState<MembersListScreen> {
                           showModalBottomSheet(
                             context: context,
                             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                            builder: (context) => Padding(
+                            builder: (sheetContext) => Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
@@ -92,15 +96,61 @@ class _MembersListScreenState extends ConsumerState<MembersListScreen> {
                                   ListTile(
                                     leading: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary),
                                     title: const Text('إرسال رسالة'),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('سيتم فتح المحادثة قريباً')));
+                                    onTap: () async {
+                                      Navigator.pop(sheetContext);
+                                      try {
+                                        final repo = MessagingRepository(ref.read(dioProvider));
+                                        final memberId = m['id'].toString();
+                                        final memberName = m['full_name'] ?? '${m['first_name']} ${m['last_name']}';
+                                        
+                                        // Create or fetch conversation
+                                        final conv = await repo.createConversation('direct', [memberId]);
+                                        final convId = conv['id'].toString();
+                                        
+                                        if (context.mounted) {
+                                          context.push('/chat/$convId', extra: {'name': memberName});
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+                                        }
+                                      }
                                     },
                                   ),
                                   ListTile(
                                     leading: const Icon(Icons.call_rounded, color: AppColors.present),
                                     title: const Text('اتصال مباشر'),
-                                    onTap: () => Navigator.pop(context),
+                                    onTap: () async {
+                                      Navigator.pop(sheetContext);
+                                      final phone = m['phone'];
+                                      if (phone != null && phone.toString().isNotEmpty) {
+                                        final url = Uri.parse('tel:$phone');
+                                        if (await canLaunchUrl(url)) {
+                                          await launchUrl(url);
+                                        } else {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لا يمكن فتح تطبيق الاتصال')));
+                                          }
+                                        }
+                                      } else {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('رقم الهاتف غير متوفر')));
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.analytics_rounded, color: AppColors.warning),
+                                    title: const Text('البيانات والمتابعة'),
+                                    onTap: () {
+                                      Navigator.pop(sheetContext);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => MemberDetailsScreen(member: m),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),

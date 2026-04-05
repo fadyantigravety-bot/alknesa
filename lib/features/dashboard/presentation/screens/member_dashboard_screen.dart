@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/providers/auth_provider.dart';
 
@@ -11,12 +12,27 @@ class MemberDashboardScreen extends ConsumerWidget {
     final user = ref.watch(authStateProvider).value;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('الكنيسة', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_rounded),
+            onPressed: () => context.push('/member/notifications'),
+            tooltip: 'الإشعارات',
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: () => ref.read(authStateProvider.notifier).logout(),
+            tooltip: 'تسجيل الخروج',
+          ),
+        ],
+      ),
       body: CustomScrollView(
         slivers: [
           // Warm gradient header
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 56, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFFE8A838), Color(0xFFF5D590)],
@@ -105,13 +121,26 @@ class MemberDashboardScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _MemberQuickLink(icon: Icons.mosque_rounded, label: 'الصلوات', color: AppColors.primary),
+                      _MemberQuickLink(
+                        icon: Icons.mosque_rounded, 
+                        label: 'الصلوات', 
+                        color: AppColors.primary,
+                        onTap: () => context.push('/member/prayers'),
+                      ),
                       const SizedBox(width: 12),
-                      _MemberQuickLink(icon: Icons.event_rounded, label: 'الجمعة', color: AppColors.present),
+                      _MemberQuickLink(
+                        icon: Icons.event_rounded, 
+                        label: 'الجمعة', 
+                        color: AppColors.present,
+                        onTap: () => context.push('/member/friday'),
+                      ),
                       const SizedBox(width: 12),
-                      _MemberQuickLink(icon: Icons.chat_rounded, label: 'الرسائل', color: AppColors.info),
-                      const SizedBox(width: 12),
-                      _MemberQuickLink(icon: Icons.campaign_rounded, label: 'الإعلانات', color: AppColors.accent),
+                      _MemberQuickLink(
+                        icon: Icons.chat_rounded, 
+                        label: 'الرسائل', 
+                        color: AppColors.info,
+                        onTap: () => context.push('/member/messages'),
+                      ),
                     ],
                   ),
                 ],
@@ -130,24 +159,28 @@ class _MemberQuickLink extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback onTap;
 
-  const _MemberQuickLink({required this.icon, required this.label, required this.color});
+  const _MemberQuickLink({required this.icon, required this.label, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 6),
-            Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600)),
-          ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 6),
+              Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color, fontWeight: FontWeight.w600)),
+            ],
+          ),
         ),
       ),
     );

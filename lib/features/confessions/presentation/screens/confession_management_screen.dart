@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/providers/auth_provider.dart';
 
 final confessionsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final dio = ref.watch(dioProvider);
@@ -51,12 +52,14 @@ class ConfessionManagementScreen extends ConsumerWidget {
   }
 }
 
-class _ConfessionList extends StatelessWidget {
+class _ConfessionList extends ConsumerWidget {
   final List<Map<String, dynamic>> records;
   const _ConfessionList({required this.records});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isPriest = ref.watch(authStateProvider).value?.role == 'priest';
+
     if (records.isEmpty) {
       return Center(child: Text('لا توجد سجلات', style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary)));
     }
@@ -106,7 +109,54 @@ class _ConfessionList extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: AppColors.error.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                  margin: const EdgeInsets.only(left: 8),
                   child: const Text('متأخر', style: TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600)),
+                ),
+              if (isPriest)
+                IconButton(
+                  icon: const Icon(Icons.add_task_rounded, color: AppColors.primary),
+                  tooltip: 'تسجيل اعتراف',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('تأكيد'),
+                        content: Text('هل متأكد من تسجيل اعتراف لـ ${c['member_name']}؟'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                            child: const Text('تأكيد', style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      try {
+                        await ref.read(dioProvider).patch(
+                          '${ApiConstants.confessionRecords}${c['id']}/',
+                          data: {
+                            'has_confessed': true,
+                            'last_confession_date': DateTime.now().toIso8601String().split('T')[0],
+                          },
+                        );
+                        ref.invalidate(confessionsProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم تسجيل الاعتراف بنجاح!'), backgroundColor: AppColors.present),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: AppColors.error),
+                          );
+                        }
+                      }
+                    }
+                  },
                 ),
             ],
           ),
